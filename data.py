@@ -13,11 +13,38 @@ def create_wordfile(filename):
 
 def calc_bits(word, dat, response):
     if len(response) < 5:
-        response = response + "g"
-        calc_bits()
+        temp = response + "!"
+        calc_bits(word, dat, temp)
+        temp = response + "?"
+        calc_bits(word, dat, temp)
+        temp = response + "."
+        calc_bits(word, dat, temp)
+    else:
+        return possibilities(word, dat, construct_regex(response))
 
-def possibilities(word, dat, response):
-    for 
+def possibilities(word, dat, pat):
+    count = 0
+    for i in dat:
+        if re.match(pat, word):
+            count += 1
+    return count
+
+def construct_regex(word, response):
+    regex = ""
+    gray = "[^"
+    yellow = ""
+    for i in range(0, len(response)):
+        if response[i] == "!":
+            r = r + word[i]
+        elif response[i] == "?":
+            yellow = yellow + word[i]
+            r = r + " "
+        else:
+            gray = gray + word[i]
+            r = r + " "
+    gray = gray + "]"
+    r = r.replace(" ", gray)
+    return r + "," + yellow
 
 create_wordfile("5words.txt")
 words = open("5words.txt", "r")
@@ -25,6 +52,4 @@ guess_stats = pd.DataFrame(columns = ["word", "bits", "freq"])
 guess_stats["word"] = words.readlines()
 guess_stats["word"] = guess_stats["word"].str.strip()
 print(guess_stats.head())
-for i in guess_stats.iterrows():
-    
-
+print(construct_regex("hello", "!?..."))
