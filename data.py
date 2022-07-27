@@ -11,27 +11,41 @@ def create_wordfile(filename):
     d.close()
     five.close()
 
-def calc_bits(word, dat, response):
+def create_dictionary(d, response):
     if len(response) < 5:
         temp = response + "!"
-        calc_bits(word, dat, temp)
+        d = create_dictionary(d, temp)
         temp = response + "?"
-        calc_bits(word, dat, temp)
+        d = create_dictionary(d, temp)
         temp = response + "."
-        calc_bits(word, dat, temp)
+        d = create_dictionary(d, temp)
+        return d
     else:
-        return possibilities(word, dat, construct_regex(response))
+        d[response] = 0
+        return d
+
+def calc_bits(word, dat, d):
+    count = 0
+    sum = 0
+    for k in d.keys():
+        d[k] = possibilities(word, dat, k)
+        if d[k] > 0:
+            sum += d[k]
+            count += 1
+    return sum/count
+
 
 def possibilities(word, dat, pat):
+    outcome = construct_regex(word, pat)
     count = 0
     for i in dat:
-        if re.match(pat, word):
+        if re.match(outcome[0], word) and outcome[1] in word:
             count += 1
     return count
 
 def construct_regex(word, response):
-    regex = ""
-    gray = "[^"
+    r = ""
+    gray = ""
     yellow = ""
     for i in range(0, len(response)):
         if response[i] == "!":
@@ -42,7 +56,10 @@ def construct_regex(word, response):
         else:
             gray = gray + word[i]
             r = r + " "
-    gray = gray + "]"
+    ret = ""
+    for i in range(0, len(response)):
+        if 
+        
     r = r.replace(" ", gray)
     return r + "," + yellow
 
@@ -52,4 +69,5 @@ guess_stats = pd.DataFrame(columns = ["word", "bits", "freq"])
 guess_stats["word"] = words.readlines()
 guess_stats["word"] = guess_stats["word"].str.strip()
 print(guess_stats.head())
-print(construct_regex("hello", "!?..."))
+buckets = create_dictionary(dict(), "")
+print(len(buckets.keys()))
