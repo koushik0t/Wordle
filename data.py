@@ -48,19 +48,16 @@ def construct_regex(word, response):
     gray = ""
     yellow = ""
     for i in range(0, len(response)):
+        if response[i] == ".":
+            gray = gray + word[i]
+    for i in range(0, len(response)):
         if response[i] == "!":
             r = r + word[i]
         elif response[i] == "?":
-            yellow = yellow + word[i]
-            r = r + " "
+            r = r + "[^" + gray + word[i] + "]"
+            yellow = yellow + word[i] 
         else:
-            gray = gray + word[i]
-            r = r + " "
-    ret = ""
-    for i in range(0, len(response)):
-        if 
-        
-    r = r.replace(" ", gray)
+            r = r + "[^" + gray + "]"
     return r + "," + yellow
 
 create_wordfile("5words.txt")
