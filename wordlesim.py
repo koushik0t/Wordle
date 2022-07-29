@@ -1,3 +1,2 @@
 import wordfreq
-
-def 
+import data
