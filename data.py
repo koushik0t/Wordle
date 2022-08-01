@@ -7,14 +7,22 @@ import math
 
 counter = 0
 
-def create_wordfile(filename):
+def create_files(filename):
     d = open("words_alpha.txt", "r")
-    five = open(filename, "w")
+    five = open(filename + ".txt", "w")
     for line in d.readlines():
         if re.search(r"^.{5}\n$", line):
             five.write(line)
     d.close()
     five.close()
+    words = open(filename + ".txt", "r")
+    guess_stats = pd.DataFrame(columns = ["word", "bits"])
+    guess_stats["word"] = words.readlines()
+    guess_stats["word"] = guess_stats["word"].str.strip()
+    buckets = create_dictionary(dict(), "")
+    guess_stats["bits"] = guess_stats["word"].map(lambda x: calc_bits(x, guess_stats["word"], buckets))
+    with open(filename + ".pickle", "wb") as pi:
+        pickle.dump(guess_stats, pi)
 
 def create_dictionary(d, response):
     if len(response) < 5:
@@ -46,21 +54,20 @@ def calc_bits(word, dat, d):
         print(sum)
     return sum
 
+def check_word(to_check, regex, yellow):
+    if re.match(regex, to_check):
+        for k in yellow.keys():
+            if yellow[k] < 0 and to_check.count(k) != -1*yellow[k]:
+                return False
+            elif yellow[k] > 0 and to_check.count(k) < yellow[k]:
+                return False
+        return True
+    return False
 
 def possibilities(word, dat, pat):
-    outcome = [1, 2]
-    print("pattern is: " + outcome[0])
-    count = 0
-    for possible in dat:
-        if re.match(outcome[0], possible):
-            y = True
-            for j in outcome[1].keys():
-                rep = possible.count(j)
-                if rep < abs(outcome[1][j]) or (outcome[1][j] < 0 and rep > outcome[1][j]*-1):
-                    y = False
-            if y:
-                count+=1
-    return count
+    outcome = construct_regex(word, pat)
+    dat["drop"] = dat["word"].map(lambda x: check_word(x, outcome[0], outcome[1]))
+    return dat[dat["drop"] == False]
 
 def construct_word_code(word, target):
     r = ""
@@ -72,6 +79,41 @@ def construct_word_code(word, target):
         else:
             r = r + "."
     return r
+
+def construct_regex(word, response):
+    d = dict()
+    r = ""
+    if response == "":
+        return r, d
+    gray = ""
+    for i in range(0, len(response)):
+        if response[i] == ".":
+            gray = gray + word[i]
+    for i in range(0, len(response)):
+        if response[i] == "!":
+            r = r + word[i]
+        elif response[i] == "?":
+            r = r + "[^" + gray + word[i] + "]"
+            if word[i] not in d.keys():
+                d[word[i]] = 0
+            if word[i] in gray:
+                d[word[i]] -= 1
+            else:
+                d[word[i]] += 1
+        else:
+            r = r + "[^" + gray + "]"
+    return r, d
+
+def simwordle(answer, dat):
+    guesses = []
+    d = create_dictionary(dict(), "")
+    guesses.append(dat.loc[dat["bits"]==dat["bits"].max(), "word"])
+    guesses["drop"] = False
+    while len(guesses) < 7 and guesses[len(guesses)-1]["word"] != answer:
+        dat = possibilities(guesses[len(guesses)-1]), dat, construct_word_code(guesses[len(guesses)-1]["word"], answer)
+        dat["bits"] = dat["word"].map(lambda x: calc_bits(x, dat["word"], d))
+        guesses.append(dat.loc[dat["bits"]==dat["bits"].max()])
+    return len(guesses)
     """d = dict()
     r = ""
     if response == "":
@@ -94,16 +136,3 @@ def construct_word_code(word, target):
         else:
             r = r + "[^" + gray + "]"
     return r, d"""
-
-create_wordfile("5words.txt")
-words = open("5words.txt", "r")
-guess_stats = pd.DataFrame(columns = ["word", "bits"])
-guess_stats["word"] = words.readlines()
-pi = open("wordle_begin.txt", "w")
-pickle.dump(guess_stats, "wordle_begin.txt")
-guess_stats["word"] = guess_stats["word"].str.strip()
-buckets = create_dictionary(dict(), "")
-guess_stats["bits"] = guess_stats["word"].map(lambda x: calc_bits(x, guess_stats["word"], buckets))
-pi = open("wordle_begin.txt", "w")
-pickle.dump(guess_stats, pi)
-print(guess_stats.head())
